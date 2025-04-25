@@ -11,7 +11,7 @@ import (
 func Download(ctx context.Context, url, fileName string) error {
 	urlFormat := filepath.Ext(url)
 
-	if urlFormat == "m3u8" {
+	if urlFormat == ".m3u8" {
 		if hlsDownErr := DownloadHlsToVideo(ctx, url, fileName); hlsDownErr != nil {
 			log.Printf("Donwload Url to Video Error: %v", hlsDownErr)
 			return hlsDownErr
@@ -73,8 +73,9 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
-		"-profile:v", "baseline",
+		// "-profile:v", "baseline",
 		"-level", "3.0",
+		// "-crf", "32",
 		"-c:v", "libx264",
 		"-c:a", "copy",
 		fileName,
