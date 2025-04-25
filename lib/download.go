@@ -6,25 +6,20 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 )
 
 func Download(ctx context.Context, url, fileName string) {
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	urlFormat := filepath.Ext(url)
 
-	go func() {
-		defer wg.Done()
-		if urlFormat == "m3u8" {
-			DownloadHlsToVideo(ctx, url, fileName)
-		} else {
-			DownloadLink(ctx, url, fileName)
+	if urlFormat == "m3u8" {
+		if hlsDownErr := DownloadHlsToVideo(ctx, url, fileName); hlsDownErr != nil {
+			log.Printf("Donwload Url to Video Error: %v", hlsDownErr)
 		}
-	}()
-
-	wg.Wait()
+	} else {
+		if downErr := DownloadLink(ctx, url, fileName); downErr != nil {
+			log.Printf("Download URL Error: %v", downErr)
+		}
+	}
 }
 
 func DownloadLink(ctx context.Context, url, fileName string) error {
