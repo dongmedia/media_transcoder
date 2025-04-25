@@ -39,7 +39,7 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
 		"-level", "3.0",
-		"-c:v", "av1",
+		"-c:v", "copy",
 		"-c:a", "copy",
 		fileName,
 	)
@@ -76,7 +76,7 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 		// "-profile:v", "baseline",
 		"-level", "3.0",
 		// "-crf", "32",
-		"-c:v", "libx264",
+		"-c:v", "copy",
 		"-c:a", "copy",
 		fileName,
 	)
