@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -12,6 +13,8 @@ import (
 )
 
 func main() {
+	url, fileName := InputFileNameAndUrl()
+
 	// Create a context that will be canceled on SIGINT or SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -32,7 +35,7 @@ func main() {
 
 	log.Printf("FFMPEG is installed")
 
-	lib.DownloadHlsToVideo(ctx, "https://cms-public-artifacts.artlist.io/content/artgrid/footage-hls/101491_1080p.m3u8", "test.mp4")
+	lib.DownloadHlsToVideo(ctx, url, fileName)
 	<-ctx.Done()
 }
 
@@ -41,6 +44,20 @@ func isFFmpegInstalled() bool {
 	return err == nil
 }
 
-func GracefulShutdown() {
+func InputFileNameAndUrl() (string, string) {
+	var url, fileName string
 
+	fmt.Sprintln("Input Video URL and Output File Name: ")
+
+	_, scan1Err := fmt.Scanf("%s", &url)
+	if scan1Err != nil {
+		log.Fatal("Scan Error")
+	}
+
+	_, scan2Err := fmt.Scanf("%s", &fileName)
+	if scan2Err != nil {
+		log.Fatal("Scan File name Error")
+	}
+
+	return url, fileName
 }

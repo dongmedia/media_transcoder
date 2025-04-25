@@ -42,7 +42,7 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 		return err
 	}
 	log.Printf("변환 완료: %v", fileName)
-
+	<-ctx.Done()
 	return nil
 }
 
@@ -79,6 +79,6 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 	}
 
 	log.Printf("변환 완료: %v", fileName)
-
+	<-ctx.Done()
 	return nil
 }
