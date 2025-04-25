@@ -35,7 +35,7 @@ func main() {
 
 	log.Printf("FFMPEG is installed")
 
-	lib.DownloadHlsToVideo(ctx, url, fileName)
+	lib.Download(ctx, url, fileName)
 	<-ctx.Done()
 }
 

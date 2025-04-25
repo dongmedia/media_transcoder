@@ -5,7 +5,27 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"sync"
 )
+
+func Download(ctx context.Context, url, fileName string) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+
+	urlFormat := filepath.Ext(url)
+
+	go func() {
+		defer wg.Done()
+		if urlFormat == "m3u8" {
+			DownloadHlsToVideo(ctx, url, fileName)
+		} else {
+			DownloadLink(ctx, url, fileName)
+		}
+	}()
+
+	wg.Wait()
+}
 
 func DownloadLink(ctx context.Context, url, fileName string) error {
 	if ctx.Err() != nil {
@@ -42,7 +62,7 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 		return err
 	}
 	log.Printf("변환 완료: %v", fileName)
-	<-ctx.Done()
+
 	return nil
 }
 
@@ -79,6 +99,6 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 	}
 
 	log.Printf("변환 완료: %v", fileName)
-	<-ctx.Done()
+
 	return nil
 }
