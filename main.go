@@ -33,8 +33,6 @@ func main() {
 		panic("please install ffmpeg first")
 	}
 
-	log.Printf("FFMPEG is installed")
-
 	lib.Download(ctx, url, fileName)
 	<-ctx.Done()
 }
@@ -47,7 +45,7 @@ func isFFmpegInstalled() bool {
 func InputFileNameAndUrl() (string, string) {
 	var url, fileName string
 
-	fmt.Sprintln("Input Video URL and Output File Name: ")
+	log.Println("Input 1.Video URL and 2.Output File Name: ")
 
 	_, scan1Err := fmt.Scanf("%s", &url)
 	if scan1Err != nil {

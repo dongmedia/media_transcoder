@@ -38,18 +38,14 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
-		// "-profile:v", "baseline",
 		"-level", "3.0",
-		// "-c:v libx264 ",
-		// "-preset slow ",
-		// "-crf 22",
 		"-c:v", "av1",
 		"-c:a", "copy",
 		fileName,
 	)
 
 	// FFmpeg 명령 로깅
-	log.Printf("FFmpeg 명령: %v", cmd.Args)
+	log.Printf("Transcode Stream into Video: %v", fileName)
 
 	// 명령 실행 및 오류 처리
 	output, err := cmd.CombinedOutput()
@@ -85,13 +81,12 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 	)
 
 	// FFmpeg 명령 로깅
-	log.Printf("FFmpeg 명령: %v", cmd.Args)
+	log.Printf("Transcode HLS Stream into Video: %v", fileName)
 
 	// 명령 실행 및 오류 처리
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-
 		log.Printf("변환 실패 (Job %s): %v\n%s", url, err, string(output))
 
 		return err
