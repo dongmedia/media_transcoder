@@ -8,18 +8,22 @@ import (
 	"path/filepath"
 )
 
-func Download(ctx context.Context, url, fileName string) {
+func Download(ctx context.Context, url, fileName string) error {
 	urlFormat := filepath.Ext(url)
 
 	if urlFormat == "m3u8" {
 		if hlsDownErr := DownloadHlsToVideo(ctx, url, fileName); hlsDownErr != nil {
 			log.Printf("Donwload Url to Video Error: %v", hlsDownErr)
+			return hlsDownErr
 		}
 	} else {
 		if downErr := DownloadLink(ctx, url, fileName); downErr != nil {
 			log.Printf("Download URL Error: %v", downErr)
+			return downErr
 		}
 	}
+
+	return nil
 }
 
 func DownloadLink(ctx context.Context, url, fileName string) error {
