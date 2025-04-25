@@ -7,7 +7,7 @@ import (
 	"os/exec"
 )
 
-func DownloadLink(ctx context.Context, url string) error {
+func DownloadLink(ctx context.Context, url, fileName string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -26,7 +26,7 @@ func DownloadLink(ctx context.Context, url string) error {
 		// "-crf 22",
 		"-c:v", "av1",
 		"-c:a", "copy",
-		"./test.mp4",
+		fileName,
 	)
 
 	// FFmpeg 명령 로깅
@@ -41,11 +41,12 @@ func DownloadLink(ctx context.Context, url string) error {
 
 		return err
 	}
+	log.Printf("변환 완료: %v", fileName)
 
 	return nil
 }
 
-func DownloadHls(ctx context.Context, url string) error {
+func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -59,12 +60,9 @@ func DownloadHls(ctx context.Context, url string) error {
 		"-i", url,
 		"-profile:v", "baseline",
 		"-level", "3.0",
-		"-c:v libx264 ",
-		"-preset slow ",
-		"-crf 22",
-		// "-c:v", "copy",
+		"-c:v", "libx264",
 		"-c:a", "copy",
-		"./test.mp4",
+		fileName,
 	)
 
 	// FFmpeg 명령 로깅
@@ -79,6 +77,8 @@ func DownloadHls(ctx context.Context, url string) error {
 
 		return err
 	}
+
+	log.Printf("변환 완료: %v", fileName)
 
 	return nil
 }

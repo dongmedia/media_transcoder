@@ -28,11 +28,11 @@ func main() {
 	if !isFFmpegInstalled() {
 		log.Printf("FFMPEG is not installed")
 		panic("please install ffmpeg first")
-	} else {
-		log.Printf("FFMPEG is installed")
-
-		lib.DownloadHls(ctx, "https://youtu.be/3e16wUKZyyM")
 	}
+
+	log.Printf("FFMPEG is installed")
+
+	lib.DownloadHlsToVideo(ctx, "https://cms-public-artifacts.artlist.io/content/artgrid/footage-hls/101491_1080p.m3u8", "test.mp4")
 	<-ctx.Done()
 }
 
