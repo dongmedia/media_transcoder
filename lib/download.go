@@ -11,7 +11,7 @@ import (
 func Download(ctx context.Context, url, fileName string) error {
 	urlFormat := filepath.Ext(url)
 
-	if urlFormat == "m3u8" {
+	if urlFormat == ".m3u8" {
 		if hlsDownErr := DownloadHlsToVideo(ctx, url, fileName); hlsDownErr != nil {
 			log.Printf("Donwload Url to Video Error: %v", hlsDownErr)
 			return hlsDownErr
@@ -52,11 +52,11 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 
 	if err != nil {
 
-		log.Printf("변환 실패 (Job %s): %v\n%s", url, err, string(output))
+		log.Printf("Transcoding Error (Job %s): %v\n%s", url, err, string(output))
 
 		return err
 	}
-	log.Printf("변환 완료: %v", fileName)
+	log.Printf("Finished: %v", fileName)
 
 	return nil
 }
@@ -73,8 +73,9 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
-		"-profile:v", "baseline",
+		// "-profile:v", "baseline",
 		"-level", "3.0",
+		// "-crf", "32",
 		"-c:v", "libx264",
 		"-c:a", "copy",
 		fileName,
@@ -87,12 +88,12 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
-		log.Printf("변환 실패 (Job %s): %v\n%s", url, err, string(output))
+		log.Printf("Transcoding Error (Job %s): %v\n%s", url, err, string(output))
 
 		return err
 	}
 
-	log.Printf("변환 완료: %v", fileName)
+	log.Printf("Finished: %v", fileName)
 
 	return nil
 }
