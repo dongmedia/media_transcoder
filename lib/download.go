@@ -31,7 +31,7 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 		return ctx.Err()
 	}
 
-	fileFormat := filepath.Ext(fileName)
+	// fileFormat := filepath.Ext(fileName)
 
 	ffmpegPath := os.Getenv("FFMPEG_PATH")
 	if ffmpegPath == "" {
@@ -40,10 +40,8 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
-		"-level", "3.0",
-		"-c:v", "copy",
+		"-c:v", "libx264",
 		"-c:a", "copy",
-		"-f", fileFormat,
 		fileName,
 	)
 
@@ -69,7 +67,7 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 		return ctx.Err()
 	}
 
-	fileFormat := filepath.Ext(fileName)
+	// fileFormat := filepath.Ext(fileName)
 
 	ffmpegPath := os.Getenv("FFMPEG_PATH")
 	if ffmpegPath == "" {
@@ -78,10 +76,8 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
-		"-level", "3.0",
-		"-c:v", "copy",
+		"-c:v", "libx264",
 		"-c:a", "copy",
-		"-f", fileFormat,
 		fileName,
 	)
 
