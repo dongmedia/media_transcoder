@@ -6,10 +6,10 @@
     * mkv
     * avi
     * etc...
-* Experimental Video Encoding
+<!-- * Experimental Video Encoding
     * AV1
     * VP7
-    * VP9
+    * VP9 -->
 * Default Video Codec
     * libx264 (H.264)
 ## Requirements
