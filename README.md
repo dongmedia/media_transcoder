@@ -14,3 +14,10 @@
     * libx264 (H.264)
 ## Requirements
 * ffmpeg
+
+## Example
+* Url Save to Video
+<img src="urlToVideo.png"/>
+
+* Transcode Video to Video
+<img src="videoToVideo.png"/>
