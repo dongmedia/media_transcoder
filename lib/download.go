@@ -31,6 +31,8 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 		return ctx.Err()
 	}
 
+	fileFormat := filepath.Ext(fileName)
+
 	ffmpegPath := os.Getenv("FFMPEG_PATH")
 	if ffmpegPath == "" {
 		ffmpegPath = "ffmpeg" // 기본값
@@ -41,6 +43,7 @@ func DownloadLink(ctx context.Context, url, fileName string) error {
 		"-level", "3.0",
 		"-c:v", "copy",
 		"-c:a", "copy",
+		"-f", fileFormat,
 		fileName,
 	)
 
@@ -66,6 +69,8 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 		return ctx.Err()
 	}
 
+	fileFormat := filepath.Ext(fileName)
+
 	ffmpegPath := os.Getenv("FFMPEG_PATH")
 	if ffmpegPath == "" {
 		ffmpegPath = "ffmpeg" // 기본값
@@ -73,11 +78,10 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 
 	cmd := exec.CommandContext(ctx, ffmpegPath,
 		"-i", url,
-		// "-profile:v", "baseline",
 		"-level", "3.0",
-		// "-crf", "32",
 		"-c:v", "copy",
 		"-c:a", "copy",
+		"-f", fileFormat,
 		fileName,
 	)
 
