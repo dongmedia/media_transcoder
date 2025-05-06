@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-func Download(ctx context.Context, url, fileName string) error {
+func Download(ctx context.Context, url, fileName, gpuType string) error {
 	// urlFormat := filepath.Ext(url)
 
-	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, fileName); downlaodErr != nil {
+	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, fileName, gpuType); downlaodErr != nil {
 		log.Printf("Download Url to Video Error: %v", downlaodErr)
 		return downlaodErr
 	}
@@ -105,11 +105,10 @@ func DownloadHlsToVideo(ctx context.Context, url, fileName string) error {
 	return nil
 }
 
-func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName string) error {
+func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType string) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
-	gpuType := os.Getenv("GPU_TYPE")
 
 	if gpuType == "" {
 		gpuType = "apple"

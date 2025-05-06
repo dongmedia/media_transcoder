@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	url, fileName := InputFileNameAndUrl()
+	url, fileName, gpuType := InputFileNameAndUrl()
 
 	// Create a context that will be canceled on SIGINT or SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())
@@ -34,7 +34,7 @@ func main() {
 		panic("please install ffmpeg first")
 	}
 
-	lib.Download(ctx, url, fileName)
+	lib.Download(ctx, url, fileName, gpuType)
 	<-ctx.Done()
 }
 
@@ -43,20 +43,28 @@ func isFFmpegInstalled() bool {
 	return err == nil
 }
 
-func InputFileNameAndUrl() (string, string) {
-	var url, fileName string
+func InputFileNameAndUrl() (string, string, string) {
+	var url, fileName, gpuType string
 
 	log.Println("Input 1.Video URL and 2.Output File Name: ")
 
+	log.Print("1. URL/Video Path: ")
 	_, scan1Err := fmt.Scanf("%s", &url)
 	if scan1Err != nil {
 		log.Fatal("Scan Error")
 	}
 
+	log.Print("2. Output File: ")
 	_, scan2Err := fmt.Scanf("%s", &fileName)
 	if scan2Err != nil {
 		log.Fatal("Scan File name Error")
 	}
 
-	return url, fileName
+	log.Println("3. GPU Usage; nvidia, amd, intel, apple")
+	log.Print("Default GPU Type is apple: ")
+	_, scan3Err := fmt.Scanf("%s", &gpuType)
+	if scan3Err != nil {
+		log.Fatal("Scan Gpu Type Error")
+	}
+	return url, fileName, gpuType
 }
