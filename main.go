@@ -22,6 +22,7 @@ func main() {
 	// Set up signal handling
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
 	go func() {
 		sig := <-sigChan
 		log.Printf("Received signal %s, shutting down...", sig)
