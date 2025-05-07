@@ -156,7 +156,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType string) 
 	case "apple":
 		cmd = exec.CommandContext(ctx, ffmpegPath,
 			"-hwaccel", "videotoolbox",
-			"-hwaccel_output_format", "videotoolbox_vld",
+			// "-hwaccel_output_format", "videotoolbox_vld",
 			"-i", url,
 			"-c:v", "h264_videotoolbox",
 			"-realtime", "true", // 실시간 처리
