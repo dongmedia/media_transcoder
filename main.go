@@ -61,7 +61,7 @@ func InputFileNameAndUrl() (string, string, string) {
 	}
 
 	log.Println("3. GPU Usage; nvidia, amd, intel, apple")
-	log.Print("Default GPU Type is apple: ")
+	log.Print("You can exclude GPU by inputting empty string")
 	_, scan3Err := fmt.Scanf("%s", &gpuType)
 	if scan3Err != nil {
 		log.Fatal("Scan Gpu Type Error")
