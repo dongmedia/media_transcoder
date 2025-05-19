@@ -8,10 +8,10 @@ import (
 	"strings"
 )
 
-func Download(ctx context.Context, url, fileName, gpuType string) error {
+func Download(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudio bool) error {
 	// urlFormat := filepath.Ext(url)
 
-	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, fileName, gpuType); downlaodErr != nil {
+	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); downlaodErr != nil {
 		log.Printf("Download Url to Video Error: %v", downlaodErr)
 		return downlaodErr
 	}
@@ -30,7 +30,7 @@ func Download(ctx context.Context, url, fileName, gpuType string) error {
 	return nil
 }
 
-func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, videoEncoder, audioEncoder, baseline, preset string, isAudioInclude bool) error {
+func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudioInclude bool) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -43,7 +43,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, videoEn
 		ffmpegPath = "ffmpeg" // 기본값
 	}
 
-	transCodeOption := handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, baseline, preset, isAudioInclude)
+	transCodeOption := handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset, isAudioInclude)
 
 	cmd := exec.CommandContext(ctx, ffmpegPath, transCodeOption...)
 
@@ -63,7 +63,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, videoEn
 	return nil
 }
 
-func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, baseline, preset string, isAudioInclude bool) []string {
+func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
 	var optionList []string
 
 	switch strings.ToLower(gpuType) {
