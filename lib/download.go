@@ -80,9 +80,9 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
 
 	if videoEncoder == "" {
-		optionList = append(optionList, "c:v", "copy")
+		optionList = append(optionList, "-c:v", "copy")
 	} else {
-		optionList = append(optionList, "c:v", videoEncoder)
+		optionList = append(optionList, "-c:v", videoEncoder)
 	}
 
 	if !isAudioInclude {

@@ -52,40 +52,46 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 	log.Print("1. URL/Video Path: ")
 	_, scan1Err := fmt.Scanf("%s", &url)
 	if scan1Err != nil {
-		log.Fatal("Scan Error")
+		log.Fatalf("Scan Error: %v", scan1Err)
 	}
 
 	log.Print("2. Output File: ")
 	_, scan2Err := fmt.Scanf("%s", &fileName)
 	if scan2Err != nil {
-		log.Fatal("Scan File name Error")
+		log.Fatalf("Scan File name Error: %v", scan2Err)
 	}
 
 	log.Println("3. GPU Usage; nvidia, amd, intel, apple")
 	log.Print("You can exclude GPU by inputting empty string")
 	_, scan3Err := fmt.Scanf("%s", &gpuType)
 	if scan3Err != nil {
-		log.Fatal("Scan Gpu Type Error")
+		gpuType = ""
+		// log.Fatalf("Scan Gpu Type Error: %v", scan3Err)
 	}
 
 	log.Println("4. Preset: ultrafast, slow, baseline")
+	log.Println("Default: baseline")
 	_, scan4Err := fmt.Scanf("%s", &preset)
 	if scan4Err != nil {
-		log.Fatal("Scan Preset Type Error")
+		preset = "baseline"
+		// log.Fatalf("Scan Preset Type Error: %v", scan4Err)
 	}
 
 	log.Println("5. Video Encoder:  libx264, libx265, av1, ...")
 	log.Println("Default: copy")
 	_, scan5Err := fmt.Scanf("%s", &videoEncoder)
 	if scan5Err != nil {
-		log.Fatal("Scan Video Encoder Type Error")
+		videoEncoder = "copy"
+		// log.Fatalf("Scan Video Encoder Type Error: %v", scan5Err)
 	}
 
 	log.Println("5. Is Audio Include: true, false")
+	log.Println("Default: true")
 	_, scan6Err := fmt.Scanf("%b", &isAudio)
 
 	if scan6Err != nil {
-		log.Fatal("Scan is Audio Type Error")
+		isAudio = true
+		// log.Fatalf("Scan is Audio Type Error: %v", scan6Err)
 	}
 
 	if isAudio {
@@ -94,9 +100,12 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 		_, scan7Err := fmt.Scanf("%s", &audioEncoder)
 
 		if scan7Err != nil {
-			log.Fatal("Scan is Audio Encoder Type Error")
+			audioEncoder = "copy"
+			// log.Fatalf("Scan is Audio Encoder Type Error: %v", scan7Err)
 		}
 	}
+
+	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder)
 
 	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder
 }
