@@ -30,7 +30,7 @@ func Download(ctx context.Context, url, fileName, gpuType string) error {
 	return nil
 }
 
-func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType string) error {
+func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, videoEncoder, audioEncoder, baseline, preset string, isAudioInclude bool) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -43,66 +43,15 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType string) 
 		ffmpegPath = "ffmpeg" // 기본값
 	}
 
-	var cmd *exec.Cmd
+	transCodeOption := handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, baseline, preset, isAudioInclude)
 
-	switch strings.ToLower(gpuType) {
-	case "nvidia":
-		cmd = exec.CommandContext(ctx, ffmpegPath,
-			"-hwaccel", "cuda",
-			"-i", url,
-			"-c:v", "h264_nvenc",
-			"-preset", "fast",
-			"-c:a", "copy",
-			fileName,
-		)
-	case "amd":
-		cmd = exec.CommandContext(ctx, ffmpegPath,
-			"-hwaccel", "dxva2",
-			"-i", url,
-			"-c:v", "h264_amf",
-			"-usage", "transcoding",
-			"-c:a", "copy",
-			fileName,
-		)
-	case "intel":
-		cmd = exec.CommandContext(ctx, ffmpegPath,
-			"-hwaccel", "qsv",
-			"-init_hw_device", "qsv=hw",
-			"-i", url,
-			"-c:v", "h264_qsv",
-			"-preset", "faster",
-			"-c:a", "copy",
-			fileName,
-		)
-	case "apple":
-		cmd = exec.CommandContext(ctx, ffmpegPath,
-			"-hwaccel", "videotoolbox",
-			// "-hwaccel_output_format", "videotoolbox_vld",
-			"-i", url,
-			"-c:v", "h264_videotoolbox",
-			"-realtime", "true", // 실시간 처리
-			"-allow_sw", "1", // 소프트웨어 폴백 허용
-			"-b:v", "0", // 품질 우선
-			"-c:a", "copy",
-			"-movflags", "faststart",
-			fileName,
-		)
-	default:
-		// 기본값은 소프트웨어 인코딩
-		cmd = exec.CommandContext(ctx, ffmpegPath,
-			"-i", url,
-			"-c:v", "libx264",
-			"-c:a", "copy",
-			fileName,
-		)
-	}
+	cmd := exec.CommandContext(ctx, ffmpegPath, transCodeOption...)
 
 	// FFmpeg 명령 로깅
 	log.Printf("Transcode HLS Stream into Video: %v", fileName)
 
 	// 명령 실행 및 오류 처리
 	output, err := cmd.CombinedOutput()
-
 	if err != nil {
 		log.Printf("Transcoding Error (Job %s): %v\n%s", url, err, string(output))
 
@@ -112,4 +61,43 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType string) 
 	log.Printf("Finished: %v", fileName)
 
 	return nil
+}
+
+func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, baseline, preset string, isAudioInclude bool) []string {
+	var optionList []string
+
+	switch strings.ToLower(gpuType) {
+	case "apple":
+		optionList = append(optionList, "-hwaccel", "videotoolbox")
+	case "intel":
+		optionList = append(optionList, "-hwaccel", "qsv")
+	case "amd":
+		optionList = append(optionList, "-hwaccel", "dxca2")
+	case "nvidia":
+		optionList = append(optionList, "cuda")
+	}
+
+	optionList = append(optionList, "-i", strings.Trim(url, " "))
+
+	if videoEncoder == "" {
+		optionList = append(optionList, "c:v", "copy")
+	} else {
+		optionList = append(optionList, "c:v", videoEncoder)
+	}
+
+	if !isAudioInclude {
+		optionList = append(optionList, "-an")
+	} else {
+		optionList = append(optionList, "-c:a", audioEncoder) // audio encdoer in case of audio included
+	}
+
+	if preset == "" {
+		optionList = append(optionList, "-preset", "baseline")
+	} else {
+		optionList = append(optionList, "-preset", preset)
+	}
+
+	optionList = append(optionList, fileName)
+
+	return optionList
 }
