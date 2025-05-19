@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	url, fileName, gpuType := InputFileNameAndUrl()
+	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder := InputFileNameAndUrl()
 
 	// Create a context that will be canceled on SIGINT or SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())
@@ -34,7 +34,7 @@ func main() {
 		panic("please install ffmpeg first")
 	}
 
-	lib.Download(ctx, url, fileName, gpuType)
+	lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
 	<-ctx.Done()
 }
 
@@ -43,8 +43,9 @@ func isFFmpegInstalled() bool {
 	return err == nil
 }
 
-func InputFileNameAndUrl() (string, string, string) {
-	var url, fileName, gpuType string
+func InputFileNameAndUrl() (string, string, string, string, bool, string, string) {
+	var url, fileName, gpuType, preset, audioEncoder, videoEncoder string
+	var isAudio bool
 
 	log.Println("Input 1.Video URL and 2.Output File Name: ")
 
@@ -66,5 +67,36 @@ func InputFileNameAndUrl() (string, string, string) {
 	if scan3Err != nil {
 		log.Fatal("Scan Gpu Type Error")
 	}
-	return url, fileName, gpuType
+
+	log.Println("4. Preset: ultrafast, slow, baseline")
+	_, scan4Err := fmt.Scanf("%s", &preset)
+	if scan4Err != nil {
+		log.Fatal("Scan Preset Type Error")
+	}
+
+	log.Println("5. Video Encoder:  libx264, libx265, av1, ...")
+	log.Println("Default: copy")
+	_, scan5Err := fmt.Scanf("%s", &videoEncoder)
+	if scan5Err != nil {
+		log.Fatal("Scan Video Encoder Type Error")
+	}
+
+	log.Println("5. Is Audio Include: true, false")
+	_, scan6Err := fmt.Scanf("%b", &isAudio)
+
+	if scan6Err != nil {
+		log.Fatal("Scan is Audio Type Error")
+	}
+
+	if isAudio {
+		log.Println("5. AudioEncoder: AAC ...")
+		log.Println("Default: copy")
+		_, scan7Err := fmt.Scanf("%s", &audioEncoder)
+
+		if scan7Err != nil {
+			log.Fatal("Scan is Audio Encoder Type Error")
+		}
+	}
+
+	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder
 }
