@@ -9,28 +9,15 @@ import (
 )
 
 func Download(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudio bool) error {
-	// urlFormat := filepath.Ext(url)
-
-	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); downlaodErr != nil {
+	if downlaodErr := transcodeMedia(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); downlaodErr != nil {
 		log.Printf("Download Url to Video Error: %v", downlaodErr)
 		return downlaodErr
 	}
-	// if urlFormat == ".m3u8" {
-	// 	if hlsDownErr := DownloadHlsToVideo(ctx, url, fileName); hlsDownErr != nil {
-	// 		log.Printf("Donwload Url to Video Error: %v", hlsDownErr)
-	// 		return hlsDownErr
-	// 	}
-	// } else {
-	// 	if downErr := DownloadLink(ctx, url, fileName); downErr != nil {
-	// 		log.Printf("Download URL Error: %v", downErr)
-	// 		return downErr
-	// 	}
-	// }
 
 	return nil
 }
 
-func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudioInclude bool) error {
+func transcodeMedia(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudioInclude bool) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -74,7 +61,7 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	case "amd":
 		optionList = append(optionList, "-hwaccel", "dxca2")
 	case "nvidia":
-		optionList = append(optionList, "cuda")
+		optionList = append(optionList, "-hwaccel", "cuda")
 	}
 
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
