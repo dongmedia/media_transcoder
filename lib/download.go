@@ -112,6 +112,7 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 		optionList = append(optionList, "-preset", preset)
 	}
 
+	optionList = append(optionList, "-benchmark")
 	// error output handling
 	optionList = append(optionList, "-f", fileFormat)
 	optionList = append(optionList, "-movflags", "+faststart")
