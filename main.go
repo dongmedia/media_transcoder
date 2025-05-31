@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -13,6 +14,13 @@ import (
 )
 
 func main() {
+	opts := slog.HandlerOptions{
+		AddSource: true,
+		Level:     slog.LevelInfo,
+	}
+
+	jsonHandler := slog.NewJSONHandler(os.Stdout, &opts)
+	logger := slog.New(jsonHandler)
 	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder := InputFileNameAndUrl()
 
 	// Create a context that will be canceled on SIGINT or SIGTERM
@@ -25,12 +33,12 @@ func main() {
 
 	go func() {
 		sig := <-sigChan
-		log.Printf("Received signal %s, shutting down...", sig)
+		logger.Info("Start", "Received signal, shutting down...", sig.String())
 		cancel()
 	}()
 
 	if !isFFmpegInstalled() {
-		log.Printf("FFMPEG is not installed")
+		logger.Info("Start", "FFMPEG is not installed", nil)
 		panic("please install ffmpeg first")
 	}
 
