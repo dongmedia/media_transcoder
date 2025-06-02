@@ -1,11 +1,10 @@
-package lib
+package pkg
 
 import (
 	"context"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -66,8 +65,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 
 func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
 	var optionList []string
-	fileFormat := strings.Split(filepath.Ext(fileName), ".")[1]
-	// Hardware Accelation GPU options
+
 	switch strings.ToLower(gpuType) {
 	case "apple":
 		optionList = append(optionList, "-hwaccel", "videotoolbox")
@@ -76,13 +74,8 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	case "amd":
 		optionList = append(optionList, "-hwaccel", "dxca2")
 	case "nvidia":
-		optionList = append(optionList, "-hwaccel", "cuda")
+		optionList = append(optionList, "cuda")
 	}
-
-	// error resilience and skip options
-	optionList = append(optionList, "-err_detect", "ignore_err")       // ignore detecting derrors
-	optionList = append(optionList, "-fflags", "+igndts")              // ignore DTS error
-	optionList = append(optionList, "-avoid_negative_ts", "make_zero") // handle negative timestamp
 
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
 
@@ -95,15 +88,7 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	if !isAudioInclude {
 		optionList = append(optionList, "-an")
 	} else {
-		// Enhance Audio Stream Error Handling
-		if audioEncoder == "copy" {
-			// fallback to re-encoding if copy option has error
-			optionList = append(optionList, "-c:a", "aac")
-			optionList = append(optionList, "-b:a", "128k")
-		} else {
-			optionList = append(optionList, "-c:a", audioEncoder)
-		}
-		optionList = append(optionList, "-bsf:a", "aac_adtstoasc") // ADTS -> ASC
+		optionList = append(optionList, "-c:a", audioEncoder) // audio encdoer in case of audio included
 	}
 
 	if preset == "" {
@@ -111,11 +96,6 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	} else {
 		optionList = append(optionList, "-preset", preset)
 	}
-
-	optionList = append(optionList, "-benchmark")
-	// error output handling
-	optionList = append(optionList, "-f", fileFormat)
-	optionList = append(optionList, "-movflags", "+faststart")
 
 	optionList = append(optionList, fileName)
 

@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"org.donghyuns.com/media/transcoder/lib"
+	"org.donghyuns.com/media/transcoder/pkg"
 )
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 		panic("please install ffmpeg first")
 	}
 
-	lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
+	pkg.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
 	<-ctx.Done()
 }
 
