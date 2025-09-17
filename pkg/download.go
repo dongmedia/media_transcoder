@@ -92,10 +92,8 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 		ffmpegPath = "ffmpeg"
 	}
 
-	// Check if this is HLS and use segment output for real-time saving
-	if strings.Contains(url, ".m3u8") || strings.Contains(strings.ToLower(url), "hls") {
-		return downloadHlsWithSegments(ctx, url, fileName, gpuType, videoEncoder, audioEncoder, preset, isAudioInclude, ffmpegPath)
-	}
+	// For HLS streams, save directly to single file instead of segments
+	// FFmpeg can handle HLS input and output to any format directly
 
 	// For non-HLS streams, use the original method
 	transCodeOption := handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset, isAudioInclude)
@@ -438,10 +436,9 @@ func concatenateSegments(ctx context.Context, segmentDir, finalOutput, ffmpegPat
 }
 
 func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
-	fileExt := strings.Split(filepath.Ext(fileName), ".")[1]
-
 	var optionList []string
 
+	// Hardware acceleration
 	switch strings.ToLower(gpuType) {
 	case "apple":
 		optionList = append(optionList, "-hwaccel", "videotoolbox")
@@ -450,31 +447,39 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	case "amd":
 		optionList = append(optionList, "-hwaccel", "dxca2")
 	case "nvidia":
-		optionList = append(optionList, "cuda")
+		optionList = append(optionList, "-hwaccel", "cuda")
 	}
 
+	// Input source
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
 
+	// Video codec
 	if videoEncoder == "" {
 		optionList = append(optionList, "-c:v", "copy")
 	} else {
 		optionList = append(optionList, "-c:v", videoEncoder)
 	}
 
+	// Audio handling
 	if !isAudioInclude {
 		optionList = append(optionList, "-an")
 	} else {
-		optionList = append(optionList, "-c:a", audioEncoder) // audio encdoer in case of audio included
+		if audioEncoder == "" {
+			optionList = append(optionList, "-c:a", "copy")
+		} else {
+			optionList = append(optionList, "-c:a", audioEncoder)
+		}
 	}
 
+	// Preset
 	if preset == "" {
 		optionList = append(optionList, "-preset", "baseline")
 	} else {
 		optionList = append(optionList, "-preset", preset)
 	}
 
-	optionList = append(optionList, "-f", fileExt)
-	optionList = append(optionList, "-y")
+	// Output options
+	optionList = append(optionList, "-y") // Overwrite output file
 	optionList = append(optionList, fileName)
 
 	return optionList
