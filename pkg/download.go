@@ -38,7 +38,19 @@ func Download(ctx context.Context, url, fileName, gpuType, preset, videoEncoder,
 	return DownloadWithReconnection(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio, DefaultReconnectionConfig())
 }
 
+func DownloadWithHeaders(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer string, isAudio bool) error {
+	return DownloadWithReconnectionAndHeaders(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, "", isAudio, DefaultReconnectionConfig())
+}
+
+func DownloadWithHeadersAndUserAgent(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, userAgent string, isAudio bool) error {
+	return DownloadWithReconnectionAndHeaders(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, userAgent, isAudio, DefaultReconnectionConfig())
+}
+
 func DownloadWithReconnection(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudio bool, config *ReconnectionConfig) error {
+	return DownloadWithReconnectionAndHeaders(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, "", "", "", isAudio, config)
+}
+
+func DownloadWithReconnectionAndHeaders(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, userAgent string, isAudio bool, config *ReconnectionConfig) error {
 	if config == nil {
 		config = DefaultReconnectionConfig()
 	}
@@ -60,7 +72,7 @@ func DownloadWithReconnection(ctx context.Context, url, fileName, gpuType, prese
 			}
 		}
 
-		err := DownloadHlsViaGpuVideo(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
+		err := DownloadHlsViaGpuVideoWithHeaders(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, userAgent, isAudio)
 		if err == nil {
 			if attempt > 0 {
 				log.Printf("Successfully reconnected after %d attempts", attempt)
@@ -81,6 +93,10 @@ func DownloadWithReconnection(ctx context.Context, url, fileName, gpuType, prese
 }
 
 func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudioInclude bool) error {
+	return DownloadHlsViaGpuVideoWithHeaders(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, "", "", "", isAudioInclude)
+}
+
+func DownloadHlsViaGpuVideoWithHeaders(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, userAgent string, isAudioInclude bool) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -96,7 +112,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 	// FFmpeg can handle HLS input and output to any format directly
 
 	// For non-HLS streams, use the original method
-	transCodeOption := handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset, isAudioInclude)
+	transCodeOption := handleTranscodeOptionsWithHeaders(url, fileName, gpuType, videoEncoder, audioEncoder, preset, origin, referer, userAgent, isAudioInclude)
 	return executeFFmpegWithStreaming(ctx, ffmpegPath, transCodeOption, url, fileName)
 }
 
@@ -143,6 +159,10 @@ func downloadHlsWithSegmentsAndReconnection(ctx context.Context, url, fileName, 
 }
 
 func checkHlsStreamHealth(ctx context.Context, url string) error {
+	return checkHlsStreamHealthWithHeaders(ctx, url, "", "", "")
+}
+
+func checkHlsStreamHealthWithHeaders(ctx context.Context, url, origin, referer, userAgent string) error {
 	log.Printf("Checking HLS stream health: %s", url)
 
 	// Create HTTP client with timeout
@@ -157,8 +177,20 @@ func checkHlsStreamHealth(ctx context.Context, url string) error {
 	}
 
 	// Set appropriate headers for HLS
-	req.Header.Set("User-Agent", "FFmpeg/media_transcoder")
+	if userAgent != "" && strings.TrimSpace(userAgent) != "" {
+		req.Header.Set("User-Agent", strings.TrimSpace(userAgent))
+	} else {
+		req.Header.Set("User-Agent", "FFmpeg/media_transcoder")
+	}
 	req.Header.Set("Accept", "application/vnd.apple.mpegurl,application/x-mpegURL,*/*")
+
+	// Add custom headers if provided
+	if origin != "" && strings.TrimSpace(origin) != "" {
+		req.Header.Set("Origin", strings.TrimSpace(origin))
+	}
+	if referer != "" && strings.TrimSpace(referer) != "" {
+		req.Header.Set("Referer", strings.TrimSpace(referer))
+	}
 
 	// Make the request
 	resp, err := client.Do(req)
@@ -436,6 +468,10 @@ func concatenateSegments(ctx context.Context, segmentDir, finalOutput, ffmpegPat
 }
 
 func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
+	return handleTranscodeOptionsWithHeaders(url, fileName, gpuType, videoEncoder, audioEncoder, preset, "", "", "", isAudioInclude)
+}
+
+func handleTranscodeOptionsWithHeaders(url, fileName, gpuType, videoEncoder, audioEncoder, preset, origin, referer, userAgent string, isAudioInclude bool) []string {
 	var optionList []string
 
 	// Hardware acceleration
@@ -448,6 +484,22 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 		optionList = append(optionList, "-hwaccel", "dxca2")
 	case "nvidia":
 		optionList = append(optionList, "-hwaccel", "cuda")
+	}
+
+	// Add HTTP headers for HLS streams if provided
+	var headers []string
+	if origin != "" && strings.TrimSpace(origin) != "" {
+		headers = append(headers, "Origin: "+strings.TrimSpace(origin))
+	}
+	if referer != "" && strings.TrimSpace(referer) != "" {
+		headers = append(headers, "Referer: "+strings.TrimSpace(referer))
+	}
+	if userAgent != "" && strings.TrimSpace(userAgent) != "" {
+		headers = append(headers, "User-Agent: "+strings.TrimSpace(userAgent))
+	}
+	
+	if len(headers) > 0 {
+		optionList = append(optionList, "-headers", strings.Join(headers, "\r\n"))
 	}
 
 	// Input source
@@ -486,6 +538,10 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 }
 
 func handleHlsSegmentOptions(url, outputDir, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
+	return handleHlsSegmentOptionsWithHeaders(url, outputDir, gpuType, videoEncoder, audioEncoder, preset, "", "", "", isAudioInclude)
+}
+
+func handleHlsSegmentOptionsWithHeaders(url, outputDir, gpuType, videoEncoder, audioEncoder, preset, origin, referer, userAgent string, isAudioInclude bool) []string {
 	var optionList []string
 
 	// Hardware acceleration
@@ -498,6 +554,22 @@ func handleHlsSegmentOptions(url, outputDir, gpuType, videoEncoder, audioEncoder
 		optionList = append(optionList, "-hwaccel", "dxca2")
 	case "nvidia":
 		optionList = append(optionList, "-hwaccel", "cuda")
+	}
+
+	// Add HTTP headers for HLS streams if provided
+	var headers []string
+	if origin != "" && strings.TrimSpace(origin) != "" {
+		headers = append(headers, "Origin: "+strings.TrimSpace(origin))
+	}
+	if referer != "" && strings.TrimSpace(referer) != "" {
+		headers = append(headers, "Referer: "+strings.TrimSpace(referer))
+	}
+	if userAgent != "" && strings.TrimSpace(userAgent) != "" {
+		headers = append(headers, "User-Agent: "+strings.TrimSpace(userAgent))
+	}
+	
+	if len(headers) > 0 {
+		optionList = append(optionList, "-headers", strings.Join(headers, "\r\n"))
 	}
 
 	// Input

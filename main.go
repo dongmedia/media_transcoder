@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"org.donghyuns.com/media/transcoder/pkg"
@@ -21,7 +23,7 @@ func main() {
 
 	jsonHandler := slog.NewJSONHandler(os.Stdout, &opts)
 	logger := slog.New(jsonHandler)
-	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder := InputFileNameAndUrl()
+	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, origin, referer, userAgent := InputFileNameAndUrl()
 
 	// Create a context that will be canceled on SIGINT or SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())
@@ -42,7 +44,7 @@ func main() {
 		panic("please install ffmpeg first")
 	}
 
-	pkg.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
+	pkg.DownloadWithHeadersAndUserAgent(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, origin, referer, userAgent, isAudio)
 	<-ctx.Done()
 }
 
@@ -51,8 +53,8 @@ func isFFmpegInstalled() bool {
 	return err == nil
 }
 
-func InputFileNameAndUrl() (string, string, string, string, bool, string, string) {
-	var url, fileName, gpuType, preset, audioEncoder, videoEncoder string
+func InputFileNameAndUrl() (string, string, string, string, bool, string, string, string, string, string) {
+	var url, fileName, gpuType, preset, audioEncoder, videoEncoder, origin, referer, userAgent string
 	var isAudio bool
 
 	log.Println("Input 1.Video URL and 2.Output File Name: ")
@@ -103,7 +105,7 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 	}
 
 	if isAudio {
-		log.Println("5. AudioEncoder: AAC ...")
+		log.Println("6. AudioEncoder: AAC ...")
 		log.Println("Default: copy")
 		_, scan7Err := fmt.Scanf("%s", &audioEncoder)
 
@@ -113,7 +115,29 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 		}
 	}
 
-	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder)
+	log.Println("7. Origin Header (for HLS streams, press Enter to skip):")
+	log.Println("Example: https://example.com")
+	log.Print("Origin: ")
+	reader := bufio.NewReader(os.Stdin)
+	originInput, _ := reader.ReadString('\n')
+	origin = strings.TrimSpace(originInput)
 
-	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder
+	log.Println("8. Referer Header (for HLS streams, press Enter to skip):")
+	log.Println("Example: https://example.com/video.html")
+	log.Print("Referer: ")
+	refererInput, _ := reader.ReadString('\n')
+	referer = strings.TrimSpace(refererInput)
+
+	// Only ask for User-Agent if origin or referer is provided
+	if origin != "" || referer != "" {
+		log.Println("9. User-Agent Header (press Enter to use default):")
+		log.Println("Example: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+		log.Print("User-Agent: ")
+		userAgentInput, _ := reader.ReadString('\n')
+		userAgent = strings.TrimSpace(userAgentInput)
+	}
+
+	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s\norigin: %s, referer: %s, userAgent: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, origin, referer, userAgent)
+
+	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, origin, referer, userAgent
 }
