@@ -60,6 +60,8 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 
 	log.Printf("Finished: %v", fileName)
 
+	os.Exit(0) // finish transcoding
+
 	return nil
 }
 
