@@ -69,11 +69,11 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 		// log.Fatalf("Scan Gpu Type Error: %v", scan3Err)
 	}
 
-	log.Println("4. Preset: ultrafast, slow, baseline")
-	log.Println("Default: baseline")
+	log.Println("4. Preset: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow")
+	log.Println("Default: medium")
 	_, scan4Err := fmt.Scanf("%s", &preset)
 	if scan4Err != nil {
-		preset = "baseline"
+		preset = "medium"
 		// log.Fatalf("Scan Preset Type Error: %v", scan4Err)
 	}
 

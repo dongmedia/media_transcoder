@@ -101,7 +101,7 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 
 	// Preset
 	if preset == "" {
-		optionList = append(optionList, "-preset", "baseline")
+		optionList = append(optionList, "-preset", "medium")
 	} else {
 		optionList = append(optionList, "-preset", preset)
 	}
