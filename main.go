@@ -36,6 +36,7 @@ func main() {
 
 	lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
 	<-ctx.Done()
+	os.Exit(0) // finish transcoding
 }
 
 func isFFmpegInstalled() bool {
