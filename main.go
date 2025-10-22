@@ -4,23 +4,15 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
 	"os"
 	"os/exec"
 	"os/signal"
 	"syscall"
 
-	"org.donghyuns.com/media/transcoder/pkg"
+	"org.donghyuns.com/media/transcoder/lib"
 )
 
 func main() {
-	opts := slog.HandlerOptions{
-		AddSource: true,
-		Level:     slog.LevelInfo,
-	}
-
-	jsonHandler := slog.NewJSONHandler(os.Stdout, &opts)
-	logger := slog.New(jsonHandler)
 	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder := InputFileNameAndUrl()
 
 	// Create a context that will be canceled on SIGINT or SIGTERM
@@ -33,16 +25,16 @@ func main() {
 
 	go func() {
 		sig := <-sigChan
-		logger.Info("Start", "Received signal, shutting down...", sig.String())
+		log.Printf("Received signal %s, shutting down...", sig)
 		cancel()
 	}()
 
 	if !isFFmpegInstalled() {
-		logger.Info("Start", "FFMPEG is not installed", nil)
+		log.Printf("FFMPEG is not installed")
 		panic("please install ffmpeg first")
 	}
 
-	pkg.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
+	lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
 	<-ctx.Done()
 }
 
@@ -77,11 +69,11 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 		// log.Fatalf("Scan Gpu Type Error: %v", scan3Err)
 	}
 
-	log.Println("4. Preset: ultrafast, slow, baseline")
-	log.Println("Default: baseline")
+	log.Println("4. Preset: ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow")
+	log.Println("Default: medium")
 	_, scan4Err := fmt.Scanf("%s", &preset)
 	if scan4Err != nil {
-		preset = "baseline"
+		preset = "medium"
 		// log.Fatalf("Scan Preset Type Error: %v", scan4Err)
 	}
 

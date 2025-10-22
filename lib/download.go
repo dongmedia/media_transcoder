@@ -60,12 +60,15 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 
 	log.Printf("Finished: %v", fileName)
 
+	os.Exit(0) // finish transcoding
+
 	return nil
 }
 
 func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
 	var optionList []string
 
+	// Hardware acceleration
 	switch strings.ToLower(gpuType) {
 	case "apple":
 		optionList = append(optionList, "-hwaccel", "videotoolbox")
@@ -74,29 +77,39 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 	case "amd":
 		optionList = append(optionList, "-hwaccel", "dxca2")
 	case "nvidia":
-		optionList = append(optionList, "cuda")
+		optionList = append(optionList, "-hwaccel", "cuda")
 	}
 
+	// Input source
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
 
+	// Video codec
 	if videoEncoder == "" {
 		optionList = append(optionList, "-c:v", "copy")
 	} else {
 		optionList = append(optionList, "-c:v", videoEncoder)
 	}
 
+	// Audio handling
 	if !isAudioInclude {
 		optionList = append(optionList, "-an")
 	} else {
-		optionList = append(optionList, "-c:a", audioEncoder) // audio encdoer in case of audio included
+		if audioEncoder == "" {
+			optionList = append(optionList, "-c:a", "copy")
+		} else {
+			optionList = append(optionList, "-c:a", audioEncoder)
+		}
 	}
 
+	// Preset
 	if preset == "" {
-		optionList = append(optionList, "-preset", "baseline")
+		optionList = append(optionList, "-preset", "medium")
 	} else {
 		optionList = append(optionList, "-preset", preset)
 	}
 
+	// Output options
+	optionList = append(optionList, "-y") // Overwrite output file
 	optionList = append(optionList, fileName)
 
 	return optionList
