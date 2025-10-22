@@ -30,11 +30,14 @@ func main() {
 	}()
 
 	if !isFFmpegInstalled() {
-		log.Printf("FFMPEG is not installed")
+		log.Println("FFMPEG is not installed")
 		panic("please install ffmpeg first")
 	}
 
-	lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
+	if err := lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); err != nil {
+		log.Printf("Downalod failed: %v", err)
+		panic("download failed")
+	}
 }
 
 func isFFmpegInstalled() bool {
