@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 func Download(ctx context.Context, url, originalLink, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudio bool) error {
@@ -48,6 +49,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, originalLink, fileName, gp
 
 	cmd := exec.CommandContext(ctx, ffmpegPath, transCodeOption...)
 
+	start := time.Now()
 	// FFmpeg 명령 로깅
 	log.Printf("Transcode HLS Stream into Video: %v", fileName)
 
@@ -60,6 +62,8 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, originalLink, fileName, gp
 	}
 
 	log.Printf("Finished: %v", fileName)
+	log.Printf("elapsedTime: %v", time.Since(start))
+
 	os.Exit(0) // finish transcoding
 	return nil
 }
