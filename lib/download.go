@@ -2,16 +2,17 @@ package lib
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
 )
 
-func Download(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudio bool) error {
+func Download(ctx context.Context, url, originalLink, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudio bool) error {
 	// urlFormat := filepath.Ext(url)
 
-	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); downlaodErr != nil {
+	if downlaodErr := DownloadHlsViaGpuVideo(ctx, url, originalLink, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); downlaodErr != nil {
 		log.Printf("Download Url to Video Error: %v", downlaodErr)
 		return downlaodErr
 	}
@@ -30,7 +31,7 @@ func Download(ctx context.Context, url, fileName, gpuType, preset, videoEncoder,
 	return nil
 }
 
-func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudioInclude bool) error {
+func DownloadHlsViaGpuVideo(ctx context.Context, url, originalLink, fileName, gpuType, preset, videoEncoder, audioEncoder string, isAudioInclude bool) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
@@ -43,7 +44,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 		ffmpegPath = "ffmpeg" // 기본값
 	}
 
-	transCodeOption := handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset, isAudioInclude)
+	transCodeOption := handleTranscodeOptions(url, originalLink, fileName, gpuType, videoEncoder, audioEncoder, preset, isAudioInclude)
 
 	cmd := exec.CommandContext(ctx, ffmpegPath, transCodeOption...)
 
@@ -63,7 +64,7 @@ func DownloadHlsViaGpuVideo(ctx context.Context, url, fileName, gpuType, preset,
 	return nil
 }
 
-func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
+func handleTranscodeOptions(url, originalLink, fileName, gpuType, videoEncoder, audioEncoder, preset string, isAudioInclude bool) []string {
 	var optionList []string
 
 	// Hardware acceleration
@@ -80,6 +81,10 @@ func handleTranscodeOptions(url, fileName, gpuType, videoEncoder, audioEncoder, 
 
 	// Input source
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
+
+	if originalLink != "" {
+		optionList = append(optionList, "-metadata", fmt.Sprintf("url=%s", originalLink))
+	}
 
 	// Video codec
 	if videoEncoder == "" {
