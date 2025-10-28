@@ -87,7 +87,7 @@ func handleTranscodeOptions(url, originalLink, fileName, gpuType, videoEncoder, 
 	optionList = append(optionList, "-i", strings.Trim(url, " "))
 
 	if originalLink != "" {
-		optionList = append(optionList, "-metadata", fmt.Sprintf("url=%s", originalLink))
+		optionList = append(optionList, "-metadata", fmt.Sprintf("url=\"%s\"", originalLink))
 	}
 
 	// Video codec

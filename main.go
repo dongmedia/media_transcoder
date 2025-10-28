@@ -113,7 +113,7 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 		originalLink = ""
 	}
 
-	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder)
+	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s\noriginalLink: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, originalLink)
 
 	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, originalLink
 }
