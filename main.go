@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder := InputFileNameAndUrl()
+	url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, originalLink := InputFileNameAndUrl()
 
 	// Create a context that will be canceled on SIGINT or SIGTERM
 	ctx, cancel := context.WithCancel(context.Background())
@@ -30,11 +30,14 @@ func main() {
 	}()
 
 	if !isFFmpegInstalled() {
-		log.Printf("FFMPEG is not installed")
+		log.Println("FFMPEG is not installed")
 		panic("please install ffmpeg first")
 	}
 
-	lib.Download(ctx, url, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio)
+	if err := lib.Download(ctx, url, originalLink, fileName, gpuType, preset, videoEncoder, audioEncoder, isAudio); err != nil {
+		log.Printf("Downalod failed: %v", err)
+		panic("download failed")
+	}
 }
 
 func isFFmpegInstalled() bool {
@@ -42,8 +45,8 @@ func isFFmpegInstalled() bool {
 	return err == nil
 }
 
-func InputFileNameAndUrl() (string, string, string, string, bool, string, string) {
-	var url, fileName, gpuType, preset, audioEncoder, videoEncoder string
+func InputFileNameAndUrl() (string, string, string, string, bool, string, string, string) {
+	var url, originalLink, fileName, gpuType, preset, audioEncoder, videoEncoder string
 	var isAudio bool
 
 	log.Println("Input 1.Video URL and 2.Output File Name: ")
@@ -104,7 +107,13 @@ func InputFileNameAndUrl() (string, string, string, string, bool, string, string
 		}
 	}
 
-	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder)
+	log.Println("6. original link for metadata")
+	log.Println("Default: empty")
+	if _, err := fmt.Scanf("%s", &originalLink); err != nil {
+		originalLink = ""
+	}
 
-	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder
+	log.Printf("url: %s\noutputFile: %s\ngpuType: %s, preset: %s\nisAudio: %v, videoEncoder: %s, audioEncoder: %s\noriginalLink: %s", url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, originalLink)
+
+	return url, fileName, gpuType, preset, isAudio, videoEncoder, audioEncoder, originalLink
 }
