@@ -21,3 +21,8 @@
 
 * Transcode Video to Video
 <img src="videoToVideo.png"/>
+
+
+```
+ffmpeg -f concat -i file.txt -c copy <filename.mp4>
+```
