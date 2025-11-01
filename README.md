@@ -23,6 +23,7 @@
 <img src="videoToVideo.png"/>
 
 
+* Concat files
 ```
 ffmpeg -f concat -i file.txt -c copy <filename.mp4>
 ```
