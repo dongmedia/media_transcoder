@@ -241,6 +241,73 @@ func isVideoToolbox(codec string) bool {
 	return strings.HasSuffix(codec, "videotoolbox")
 }
 
+// mapPreset converts string presets to codec-specific values
+func mapPreset(codec, preset string) string {
+	p := strings.ToLower(strings.TrimSpace(preset))
+
+	switch codec {
+	case "libsvtav1":
+		// SVT-AV1 uses numeric presets 0-13 (lower = slower/better quality)
+		switch p {
+		case "veryslow", "placebo":
+			return "3"
+		case "slower":
+			return "4"
+		case "slow":
+			return "5"
+		case "medium", "":
+			return "6"
+		case "fast":
+			return "7"
+		case "faster":
+			return "8"
+		case "veryfast":
+			return "9"
+		case "superfast":
+			return "10"
+		case "ultrafast":
+			return "12"
+		default:
+			// If already numeric, return as-is
+			return preset
+		}
+
+	case "libaom-av1":
+		// libaom-av1 uses cpu-used 0-8 (lower = slower/better quality)
+		switch p {
+		case "veryslow", "placebo":
+			return "1"
+		case "slower":
+			return "2"
+		case "slow":
+			return "3"
+		case "medium", "":
+			return "4"
+		case "fast":
+			return "5"
+		case "faster":
+			return "6"
+		case "veryfast":
+			return "7"
+		case "superfast", "ultrafast":
+			return "8"
+		default:
+			// If already numeric, return as-is
+			return preset
+		}
+
+	case "libx265":
+		// x265 accepts string presets, return as-is
+		if p == "" {
+			return "slow"
+		}
+		return preset
+
+	default:
+		return preset
+	}
+}
+
 func rateControlArgs(codec string, cfg TranscodeConfig) []string {
 	var out []string
 
@@ -256,7 +323,7 @@ func rateControlArgs(codec string, cfg TranscodeConfig) []string {
 		case "libx265":
 			out = append(out,
 				"-crf", x265CRF,
-				"-preset", firstNonEmpty(cfg.Preset, "slow"),
+				"-preset", mapPreset(codec, cfg.Preset),
 				"-tune", "grain",
 				"-x265-params",
 				"aq-mode=3:aq-strength=1.0:qcomp=0.72:rd=4:psy-rd=2.0:psy-rdoq=1.0:deblock=-1,-1:strong-intra-smoothing=0:sao=0",
@@ -267,7 +334,7 @@ func rateControlArgs(codec string, cfg TranscodeConfig) []string {
 			// 고품질/고속 균형 기본값 + 씬컷 감지
 			out = append(out,
 				"-crf", svtCRF,
-				"-preset", firstNonEmpty(cfg.Preset, "6"),
+				"-preset", mapPreset(codec, cfg.Preset),
 				"-g", "300",
 				"-svtav1-params", "tune=0:scd=1",
 			)
@@ -276,7 +343,7 @@ func rateControlArgs(codec string, cfg TranscodeConfig) []string {
 			// 속도 옵션: row-mt, 타일, aq-mode
 			out = append(out,
 				"-crf", aomCRF,
-				"-cpu-used", firstNonEmpty(cfg.Preset, "4"),
+				"-cpu-used", mapPreset(codec, cfg.Preset),
 				"-row-mt", "1",
 				"-tile-columns", "1", // 2열(1=log2)
 				"-tile-rows", "0",
