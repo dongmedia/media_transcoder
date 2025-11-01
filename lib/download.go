@@ -92,6 +92,8 @@ type TranscodeConfig struct {
 	X265CRF    string // 기본 "19"
 	SVTCRF     string // 기본 "24"
 	AOMCRF     string // 기본 "30"
+
+	Prefer10Bit bool // 10-bit 인코딩 지원
 }
 
 // ---------------------- Public API ----------------------
@@ -136,6 +138,8 @@ func BuildTranscodeArgs(cfg TranscodeConfig) []string {
 		if tag := tagForCodec(codec); tag != "" {
 			args = append(args, "-tag:v", tag)
 		}
+		// 픽셀 포맷(10bit 지원)
+		args = append(args, pixFmtArgs(codec, cfg.Prefer10Bit)...)
 		// 공통 호환성 (copy 아닐 때만)
 		args = append(args, commonCompatArgs()...)
 		// (선택) 홀수 해상도 보정
@@ -211,8 +215,23 @@ func tagForCodec(codec string) string {
 	}
 }
 
+func pixFmtArgs(codec string, prefer10Bit bool) []string {
+	// AV1도 10bit 가능(빌드 지원 필요)
+	if prefer10Bit {
+		switch codec {
+		case "hevc_videotoolbox":
+			return []string{"-pix_fmt", "p010le"} // VT main10
+		case "libx265":
+			return []string{"-pix_fmt", "yuv420p10le"} // x265 10bit
+		case "libsvtav1", "libaom-av1":
+			return []string{"-pix_fmt", "yuv420p10le"} // AV1 10bit
+		}
+	}
+	return []string{"-pix_fmt", "yuv420p"}
+}
+
 func commonCompatArgs() []string {
-	return []string{"-pix_fmt", "yuv420p", "-movflags", "+faststart"}
+	return []string{"-movflags", "+faststart"}
 }
 
 func isSoftwareCodec(codec string) bool {
@@ -226,8 +245,8 @@ func rateControlArgs(codec string, cfg TranscodeConfig) []string {
 	var out []string
 
 	// 기본값
-	vtQ := firstNonEmpty(cfg.VTQualityQ, "20")
-	x265CRF := firstNonEmpty(cfg.X265CRF, "19")
+	vtQ := firstNonEmpty(cfg.VTQualityQ, "17")
+	x265CRF := firstNonEmpty(cfg.X265CRF, "18")
 	svtCRF := firstNonEmpty(cfg.SVTCRF, "24")
 	aomCRF := firstNonEmpty(cfg.AOMCRF, "30")
 
@@ -239,29 +258,45 @@ func rateControlArgs(codec string, cfg TranscodeConfig) []string {
 				"-crf", x265CRF,
 				"-preset", firstNonEmpty(cfg.Preset, "slow"),
 				"-tune", "grain",
-				"-x265-params", "aq-mode=3:aq-strength=1.0:rd=4:psy-rd=2.0:psy-rdoq=1.0:deblock=-1,-1:strong-intra-smoothing=0:sao=0",
+				"-x265-params",
+				"aq-mode=3:aq-strength=1.0:qcomp=0.72:rd=4:psy-rd=2.0:psy-rdoq=1.0:deblock=-1,-1:strong-intra-smoothing=0:sao=0",
+				"-g", "250",
 			)
+
 		case "libsvtav1":
+			// 고품질/고속 균형 기본값 + 씬컷 감지
 			out = append(out,
 				"-crf", svtCRF,
 				"-preset", firstNonEmpty(cfg.Preset, "6"),
+				"-g", "300",
+				"-svtav1-params", "tune=0:scd=1",
 			)
+
 		case "libaom-av1":
+			// 속도 옵션: row-mt, 타일, aq-mode
 			out = append(out,
 				"-crf", aomCRF,
 				"-cpu-used", firstNonEmpty(cfg.Preset, "4"),
+				"-row-mt", "1",
+				"-tile-columns", "1", // 2열(1=log2)
+				"-tile-rows", "0",
+				"-aq-mode", "1",
+				"-g", "300",
 			)
 		}
 
 	case isVideoToolbox(codec):
-		// VT: CRF 금지, Q 또는 Bitrate
+		// VT: Q 모드 또는 타깃 비트레이트
 		if cfg.UseBitrateTarget && strings.TrimSpace(cfg.TargetBitrate) != "" {
 			tb := cfg.TargetBitrate
-			out = append(out, "-b:v", tb, "-maxrate", tb, "-bufsize", doubleRate(tb))
+			out = append(out, "-b:v", tb, "-maxrate", tb)
+			out = append(out, doubleRateArgs(tb)...)
 		} else {
 			out = append(out, "-b:v", "0", "-q:v", vtQ)
 		}
+		out = append(out, "-g", "300")
 	}
+
 	return out
 }
 
@@ -285,26 +320,22 @@ func firstNonEmpty(s, def string) string {
 	return s
 }
 
-// "4500k" -> "9000k", "4M" -> "8M" (간단 파서)
-func doubleRate(rate string) string {
-	r := strings.TrimSpace(rate)
-	l := strings.ToLower(r)
-	if strings.HasSuffix(l, "k") {
-		val := strings.TrimSuffix(l, "k")
+func doubleRateArgs(kbps string) []string {
+	s := strings.ToLower(strings.TrimSpace(kbps))
+	if strings.HasSuffix(s, "k") {
+		val := strings.TrimSuffix(s, "k")
 		var n int
-		_, _ = fmt.Sscanf(val, "%d", &n)
+		fmt.Sscanf(val, "%d", &n)
 		if n > 0 {
-			return fmt.Sprintf("%dk", n*2)
+			return []string{"-bufsize", fmt.Sprintf("%dk", n*2)}
+		}
+	} else if strings.HasSuffix(s, "m") {
+		val := strings.TrimSuffix(s, "m")
+		var n int
+		fmt.Sscanf(val, "%d", &n)
+		if n > 0 {
+			return []string{"-bufsize", fmt.Sprintf("%dM", n*2)}
 		}
 	}
-	if strings.HasSuffix(l, "m") {
-		val := strings.TrimSuffix(l, "m")
-		var n int
-		_, _ = fmt.Sscanf(val, "%d", &n)
-		if n > 0 {
-			return fmt.Sprintf("%dM", n*2)
-		}
-	}
-	// 미지정/예외는 그대로
-	return r
+	return []string{}
 }
